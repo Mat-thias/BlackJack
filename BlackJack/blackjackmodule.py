@@ -201,30 +201,30 @@ class Player:
         elif (player_input.upper() == 'SU'):
             self.surrender()  
 
-def get_possible_choices(self):
-    """
-    Getting the player's available choices
-    Stand and hit are available when the player hand value is less than 21
-    double down is available when the hand value is less than 11 and the player just has two card in his hand
-    split is available when the hand has two cards, and they are both of the same rank
-    It returns it as a list
-    """
-    possible_choices = []
-        
-    if self.hand_value <= 21:
-        possible_choices.append('ST')
-        possible_choices.append('HT')
+    def get_possible_choices(self):
+        """
+        Getting the player's available choices
+        Stand and hit are available when the player hand value is less than 21
+        double down is available when the hand value is less than 11 and the player just has two card in his hand
+        split is available when the hand has two cards, and they are both of the same rank
+        It returns it as a list
+        """
+        possible_choices = []
 
-    if self.hand_value < 11 and len(self.hand) == 2:
-        possible_choices.append('DD')
+        if self.hand_value <= 21:
+            possible_choices.append('ST')
+            possible_choices.append('HT')
 
-    if len(self.hand) == 2 and self.hand[0].rank == self.hand[1].rank:
-        possible_choices.append('SP')
+        if self.hand_value < 11 and len(self.hand) == 2:
+            possible_choices.append('DD')
 
-    if self.hand_value <= 21:
-        possible_choices.append('SU')
+        if len(self.hand) == 2 and self.hand[0].rank == self.hand[1].rank:
+            possible_choices.append('SP')
 
-    return possible_choices
+        if self.hand_value <= 21:
+            possible_choices.append('SU')
+
+        return possible_choices
 
 
     def stand(self):
@@ -518,7 +518,8 @@ def start_game():
     print("Please input ('ST' for STAND) ('HT' for HIT) ('DD' for DOUBLING DOWN) ('SP' for SPLIT) ('SU' for SURRENDER).\n")
 
     # Asking for the number of players to create
-    no_players = input("How many players are playing: ")
+    # no_players = int(input("How many players are playing: "))
+    no_players = 2
 
     table = Table(no_players)
 
