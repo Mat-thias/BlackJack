@@ -520,7 +520,12 @@ def start_game():
     print("Please input ('ST' for STAND) ('HT' for HIT) ('DD' for DOUBLING DOWN) ('SP' for SPLIT) ('SU' for SURRENDER).\n")
 
     # Asking for the number of players to create
+<<<<<<< HEAD
     no_players = int(input("How many players are playing: "))
+=======
+    # no_players = int(input("How many players are playing: "))
+    no_players = 2
+>>>>>>> a9ff9c4a7cb8954eeaee5623c64d3936e5d1b03f
 
     table = Table(no_players)
 
