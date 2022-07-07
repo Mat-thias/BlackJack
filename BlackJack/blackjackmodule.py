@@ -64,6 +64,7 @@ class Card:
             self.value = 1
 
 
+    @staticmethod
     def set_rank_by_index_or_rank(rank):
         """Setting the rank of a card by either passing an index or rank itself"""
         if rank in RANK_LIST:
@@ -73,6 +74,7 @@ class Card:
         else:
             raise ValueError
 
+    @staticmethod
     def set_suit_by_index_or_suit(suit):
         """Setting the suit of a card by either passing an index or suit itself"""
         if suit in SUIT_LIST:
@@ -518,8 +520,7 @@ def start_game():
     print("Please input ('ST' for STAND) ('HT' for HIT) ('DD' for DOUBLING DOWN) ('SP' for SPLIT) ('SU' for SURRENDER).\n")
 
     # Asking for the number of players to create
-    # no_players = int(input("How many players are playing: "))
-    no_players = 2
+    no_players = int(input("How many players are playing: "))
 
     table = Table(no_players)
 
