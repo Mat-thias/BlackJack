@@ -1,5 +1,4 @@
 import random
-global CARD_NUMBER_LIST, CARD_SHAPE_LIST, STATUS_LIST
 
 # The possible rank of a card
 RANK_LIST = [
@@ -54,7 +53,8 @@ class Card:
     def set_value(self):
         """
         Setting the value of a card
-        Note, to set the value of an ace we need to check the value of the hand
+        Note, to set the value of an ace we need to check the value of the hand,
+        it is default to 1
         """
         if self.rank in ["2", "3", "4", "5", "6", "7", "8", "9", "10"]:
             self.value = int(self.rank)
@@ -63,13 +63,12 @@ class Card:
         else:
             self.value = 1
 
-
     @staticmethod
     def set_rank_by_index_or_rank(rank):
         """Setting the rank of a card by either passing an index or rank itself"""
         if rank in RANK_LIST:
             return rank
-        elif rank <= 13 and rank >= 1:
+        elif 13 >= rank >= 1:
             return RANK_LIST[rank - 1]
         else:
             raise ValueError
@@ -79,54 +78,50 @@ class Card:
         """Setting the suit of a card by either passing an index or suit itself"""
         if suit in SUIT_LIST:
             return suit
-        elif suit <= 4 and suit >= 1:
+        elif 4 >= suit >= 1:
             return SUIT_LIST[suit - 1]
         else:
             raise ValueError
 
 
-class Player:
-    """Declaring a player class to represent a player"""
+class Hand:
 
-    def __init__(self, index):
+    def __init__(self, player_index=None):
         """
-        index: to initialize the opposition of the player on the table
-        stake: the player stake on the hand
-        hand: the player's current hand, list of cards
-        hand_value: the value of the hand of the player
-        is_active: True if the player is still in the game, else False
-        is_standing: True if the player is standing on his/her current hand, else False
-        is_burst: True if the player has burst, gone above 21, else False
-        status: this is initialized to None, but changes and is_active changes to False
+        card_list: the hand's current cards, list of cards
+        stake: the stake on the hand
+        value: the value of the hand
+        player_index: the index of the player with the hand, None if it is the dealer
+        is_active: True if the hand is still in the game, else False
+        is_standing: True if the player is standing on the hand, else False
+        is_burst: True if the hand has burst, gone above 21, else False
+        status: this is initialized to None, but changes and is_active changes to False, indicating the status
+                like won, lost or push
         """
-        self.index = index
+        self.card_list = []
         self.stake = 100
-        self.hand = []
-        self.hand_value = 0
+        self.value = 0
+        self.player_index = player_index
         self.is_active = True
         self.is_standing = False
         self.is_burst = False
-        self. status = STATUS_LIST[0]
-
+        self.status = STATUS_LIST[0]
 
     def __str__(self):
-        result_str = f"Player {self.index} Hand : "
-        for card in self.hand:
+        if self.player_index is not None:
+            result_str = f"Player {self.player_index}: "
+        else:
+            result_str = f"Dealer: "
+        result_str += f"Hand => "
+        for card in self.card_list:
             result_str += str(card)
-        return result_str + f" | Hand value => {self.hand_value}"
-
-
-    def check_burst(self):
-        """Checking if the player has burst and setting is player to True"""
-        if self.hand_value > 21:
-            self.is_burst = True
-            self.status = STATUS_LIST[3]
-
-
-    def set_hand_value(self):
+        result_str += f" | Value => {self.value}"
+        return result_str
+    
+    def set_value(self):
         """
-        Sets the hand value for a player
-        If the hand contains an ace the computation is different.
+        Sets the value for a hand
+        If the hand contains an ace the computation is different
         It checks if when the ace value is set to 11, the hand value doesn't exceed 21
         else, it sets all ace value to 1
         Note: If there are more than one ace, at most one can have an ace with a value of 11
@@ -134,12 +129,12 @@ class Player:
         ace_indices = []
         total = 0
 
-        for index in range(len(self.hand)):
-            if self.hand[index].rank == "A":
-               ace_indices.append(index)
+        for index in range(len(self.card_list)):
+            if self.card_list[index].rank == "A":
+                ace_indices.append(index)
             else:
-                self.hand[index].set_value()
-                total += self.hand[index].value
+                self.card_list[index].set_value()
+                total += self.card_list[index].value
 
         no_aces = len(ace_indices)
 
@@ -147,7 +142,7 @@ class Player:
         ace_high_value = 11 
 
         if no_aces == 0:
-            self.hand_value = total
+            self.value = total
             return 
 
         else:
@@ -157,22 +152,27 @@ class Player:
                     total_temp += ace_high_value
 
                     if total_temp > 21:
-                        self.hand_value = total + ace_low_value
+                        self.value = total + ace_low_value
                     else:
-                        self.hand_value = total + ace_high_value
+                        self.value = total + ace_high_value
                     
                 else:
                     total += ace_low_value
-                   
 
+    def check_burst(self):
+        """Checking if the hand has burst and setting it player to True"""
+        if self.value > 21:
+            self.is_burst = True
+            self.status = STATUS_LIST[3]
 
     def decide(self, table):
         """
-        This allows the player to decide if the player is active, not standing, and hasn't burst
+        This allows the player to decide on the hand, if the hand is active, not standing,
+        and hasn't burst
         Calls the appropriate function based on the player choice
         """
-        if self.status != STATUS_LIST[0] or self.is_standing == True or self.is_active == False or self.is_burst == True:
-            # print(f"{self} can not choose.")
+        if self.status != STATUS_LIST[0] or self.is_standing \
+                or not self.is_active or self.is_burst:
             return
 
         possible_choices = self.get_possible_choices()
@@ -180,7 +180,6 @@ class Player:
         # Formulating a prompt for the user to know their available choices
         input_str = f"{self}. "
         input_str += "\nYour available choices:"
-
 
         for choice in possible_choices:
             input_str += " " + choice
@@ -191,21 +190,21 @@ class Player:
         while player_input.upper() not in possible_choices:
             player_input = (input("Invalid input. Please make sure you choose from your available choices."))
 
-        if (player_input.upper() == 'ST'):
+        if player_input.upper() == 'ST':
             self.stand()   
-        elif (player_input.upper() == 'HT'):
+        elif player_input.upper() == 'HT':
             self.hit(table)            
-        elif (player_input.upper() == 'DD'):
+        elif player_input.upper() == 'DD':
             self.double_down(table)            
-        elif (player_input.upper() == 'SP'):
+        elif player_input.upper() == 'SP':
             pass
             # self.split()            
-        elif (player_input.upper() == 'SU'):
-            self.surrender()  
+        elif player_input.upper() == 'SU':
+            self.surrender() 
 
     def get_possible_choices(self):
         """
-        Getting the player's available choices
+        Getting the player's available choices for the hand
         Stand and hit are available when the player hand value is less than 21
         double down is available when the hand value is less than 11 and the player just has two card in his hand
         split is available when the hand has two cards, and they are both of the same rank
@@ -213,34 +212,32 @@ class Player:
         """
         possible_choices = []
 
-        if self.hand_value <= 21:
+        if self.value <= 21:
             possible_choices.append('ST')
             possible_choices.append('HT')
 
-        if self.hand_value < 11 and len(self.hand) == 2:
+        if self.value < 11 and len(self.card_list) == 2:
             possible_choices.append('DD')
 
-        if len(self.hand) == 2 and self.hand[0].rank == self.hand[1].rank:
+        if len(self.card_list) == 2 and self.card_list[0].rank == self.card_list[1].rank:
             possible_choices.append('SP')
 
-        if self.hand_value <= 21:
+        if self.value <= 21:
             possible_choices.append('SU')
 
         return possible_choices
 
-
     def stand(self):
-        """Set the player is_standing to True"""
+        """Set the hand is_standing to True"""
         self.is_standing = True
-        print(f"Player {self.index} is standing. Good luck!")
+        print(f"Player {self.player_index} is standing. Good luck!")
         print()
-        
 
     def hit(self, table, double_down=None):
         """
-        Draws a card for the player
-        If the player is doubling down, th stands the player
-        else, it let the player decide again
+        Draws a card for the hand
+        If the player is doubling down, it stands the player
+        else, it lets the player decide again
         """
         if not double_down:
             table.draw_card(self)
@@ -249,22 +246,55 @@ class Player:
             table.draw_card(self)
             self.is_standing = True
 
-
     def double_down(self, table):
-        """It increases the stake of the player, draws a card and stands the player"""
+        """It increases the stake of the player, draws a card and stands the hand"""
         self.stake = self.stake * 2
         self.hit(table, double_down=True)
-        print(f"Player{self.index} doubled down. Good luck!")
-
+        print(f"Player{self.player_index} doubled down. Good luck!")
 
     def surrender(self):
         """Sets the player status to lost by surrender"""
         self.status = STATUS_LIST[2]
-        print(f"Player{self.index} surrendered.")
+        print(f"Player{self.player_index} surrendered.")
 
-    def print_status(self):
-        """To print the player's status"""
-        print(f"Player{self.index} status is {self.status}")
+
+class Player:
+    """Declaring a player class to represent a player"""
+
+    def __init__(self, index):
+        """
+        index: to initialize the opposition of the player on the table
+        balance: the player's available money
+        hand: the player's current hand, list of cards
+        """
+        self.index = index
+        self.balance = 100
+        self.hand = Hand(index)
+
+    def __str__(self):
+        result_str = f"Player {self.index} Hand : "
+        for card in self.hand.card_list:
+            result_str += str(card)
+        return result_str + f" | Hand value => {self.hand.value}"
+
+    def print_info(self):
+        """To print the player's information"""
+        result_str = f"Player{self.index};"
+
+        result_str += "Hand: "
+        for card in self.hand.card_list:
+            result_str += str(card)
+        result_str += f" | value => {self.hand.value} | stake => {self.hand.stake} " \
+                      f"| is_active => {self.hand.is_active} | is_standing => {self.hand.is_standing} " \
+                      f"| is_burst => {self.hand.is_burst} | status => {self.hand.status}"
+
+        print(result_str)
+
+    def decide(self, table):
+        """lets a player decide on a hand active, not standing and not blackjacked hand"""
+        if self.hand.is_active and not self.hand.is_standing and self.hand.status != STATUS_LIST[7]:
+            self.hand.decide(table)
+            Dealer.payout(self.hand)
 
 
 class Dealer(Player):
@@ -273,91 +303,70 @@ class Dealer(Player):
     def __init__(self):
         """
         hand: the player's current hand, list of cards
-        hand_value: the value of the hand of the player
         """
-        self.hand = []
-        self.hand_value = 0
-
+        self.hand = Hand()
 
     def __str__(self):
         result_str = f"Dealer Hand : "
-        for card in self.hand:
+        for card in self.hand.card_list:
             result_str += str(card)
-        return result_str + f" {self.hand_value}"
+        return result_str + f" {self.hand.value}"
 
-
-    def compare_player_hand(self, player):
+    def compare_player_hand(self, hand):
         """
-        This compares the dealer's hand with the player's hand, and set the player's status appropriately
+        This compares the  hand with the dealer's hand, and set the hand status appropriately
         """
-        if self.hand_value > 21:     # checking if dealer has burst then player wins by dealer burst
-            player.status = STATUS_LIST[5]
+        if self.hand.value > 21:     # checking if dealer has burst then player wins by dealer burst
+            hand.status = STATUS_LIST[5]
 
-        elif (self.hand_value > player.hand_value):
-            # print("dealer.hand_value > player.hand_value")
-            player.status = STATUS_LIST[4]
-        elif (self.hand_value < player.hand_value):
-            # print("dealer.hand_value < player.hand_value")
-            player.status = STATUS_LIST[6]
+        elif self.hand.value > hand.value:
+            hand.status = STATUS_LIST[4]
+        elif self.hand.value < hand.value:
+            hand.status = STATUS_LIST[6]
         else:
-            # print("dealer.hand_value == player.hand_value")
-            player.status = STATUS_LIST[1]
+            hand.status = STATUS_LIST[1]
         
-
-    # def set_player_status(self, player):
-    #     player.set_hand_value()
-    #     self.set_hand_value()
-    #
-    #     if (player.hand_value > 21):
-    #             player.outcome = OUTCOME[1]
-    #     if (self.hand_value > player.hand_value):
-    #         player.outcome = STATUS_LIST[1]
-    #     elif (self.hand_value < player.hand_value):
-    #         player.outcome = STATUS_LIST[0]
-    #     else:
-    #         player.outcome = OUTCOME[2]
-
-
-    def payout(self, player):
+    @staticmethod
+    def payout(hand):
         """
-        This pays the player's stake based on the status
-        Sets player's is active to False after paying
+        This pays the hand's stake based on the status
+        Sets hand's is active to False after paying
         """
         black_jack_rate = 1.5
         win_rate = 1
         loss_rate = -1
         pass_rate = 0
 
-        if player.is_active:
+        if hand.is_active:
 
-            if (player.status == STATUS_LIST[7]) and player.is_active :
-                player.stake += (player.stake * black_jack_rate)
-                print(f"{player} won by BLACK JACK. Congratulations!\n")
-            elif (player.status == STATUS_LIST[6]) and player.is_active :
-                player.stake += (player.stake * win_rate)
-                print(f"{player} won by beating the dealer. Congratulations!\n")
-            elif (player.status == STATUS_LIST[5]) and player.is_active :
-                player.stake += (player.stake * win_rate)
-                print(f"{player} won by dealer bust. Congratulations!\n")
-            elif (player.status == STATUS_LIST[4]) and player.is_active :
-                player.stake += (player.stake * loss_rate)
-                print(f"{player} lost to the dealer. Try Again!\n")
-            elif (player.status == STATUS_LIST[3]) and player.is_active :
-                player.stake += (player.stake * loss_rate)
-                print(f"{player} lost by busting. Try Again!\n")
-            elif (player.status == STATUS_LIST[2]) and player.is_active :
-                player.stake += (player.stake * loss_rate)
-                print(f"{player} lost by surrendering. Try Again!\n")
-            elif (player.status == STATUS_LIST[1]) and player.is_active :
-                player.stake += (player.stake * pass_rate)
-                print(f"{player} passed. Try Again!\n")
+            if (hand.status == STATUS_LIST[7]) and hand.is_active:
+                hand.stake += (hand.stake * black_jack_rate)
+                print(f"{hand} won by BLACK JACK. Congratulations!\n")
+            elif (hand.status == STATUS_LIST[6]) and hand.is_active:
+                hand.stake += (hand.stake * win_rate)
+                print(f"{hand} won by beating the dealer. Congratulations!\n")
+            elif (hand.status == STATUS_LIST[5]) and hand.is_active:
+                hand.stake += (hand.stake * win_rate)
+                print(f"{hand} won by dealer bust. Congratulations!\n")
+            elif (hand.status == STATUS_LIST[4]) and hand.is_active:
+                hand.stake += (hand.stake * loss_rate)
+                print(f"{hand} lost to the dealer. Try Again!\n")
+            elif (hand.status == STATUS_LIST[3]) and hand.is_active:
+                hand.stake += (hand.stake * loss_rate)
+                print(f"{hand} lost by busting. Try Again!\n")
+            elif (hand.status == STATUS_LIST[2]) and hand.is_active:
+                hand.stake += (hand.stake * loss_rate)
+                print(f"{hand} lost by surrendering. Try Again!\n")
+            elif (hand.status == STATUS_LIST[1]) and hand.is_active:
+                hand.stake += (hand.stake * pass_rate)
+                print(f"{hand} passed. Try Again!\n")
             
-            if (player.status != STATUS_LIST[0]):
-                player.is_active = False
+            if hand.status != STATUS_LIST[0]:
+                hand.is_active = False
        
 
 class Table:
-    """Defining a table method"""
+    """Defining a table class"""
 
     def __init__(self, number_of_player=1):
         """
@@ -370,7 +379,6 @@ class Table:
         self.player_list = [Player(index) for index in range(number_of_player)]
         self.shoe = Table.get_shoe()
         self.used_cards = []
-        
 
     @staticmethod
     def get_shoe():
@@ -380,7 +388,6 @@ class Table:
              ]
         random.shuffle(shoe)
         return shoe
-
 
     def print_shoe(self):
         """prints the shoe out"""
@@ -394,7 +401,6 @@ class Table:
 
         print(shoe_str)
 
-
     def print_used_cards(self):
         """prints the used_cards out"""
         used_cards_str = " USED-CARDS| "
@@ -407,93 +413,77 @@ class Table:
 
         print(used_cards_str)
 
-
-    def draw_card(self, player):
-        """Draws a card from the shoe and adds it to the used_cards as well as the player's hand"""
+    def draw_card(self, hand):
+        """Draws a card from the shoe and adds it to the used_cards as well as the hand's hand"""
         card = self.shoe.pop()
-        player.hand.append(card)
+        hand.card_list.append(card)
         self.used_cards.append(card)
 
-        player.set_hand_value()
-        player.check_burst()
-        print(player)
-
+        hand.set_value()
+        hand.check_burst()
+        print(hand)
 
     def first_serve(self):
         """Serving the players a pair of card and the dealer one card from the shoe"""
         for player in self.player_list:
-            self.draw_card(player)
+            self.draw_card(player.hand)
 
-        self.draw_card(self.dealer)
+        self.draw_card(self.dealer.hand)
 
         for player in self.player_list:
-            self.draw_card(player)
+            self.draw_card(player.hand)
         
         print()
-            
 
     def set_players_hand_value(self):
-        """Setting all the players hand value"""
+        """Setting all the players' hand value"""
         for player in self.player_list:
-                player.set_hand_value()
-
+            player.hand.set_value()
 
     def check_players_black_jack(self):
         """Checking if any of the player has blackjack and paying out the player immediately"""
-        if self.dealer.hand[0].rank != RANK_LIST[0]:
+        if self.dealer.hand.card_list[0].rank != RANK_LIST[0]:
 
             for player in self.player_list:
             
-                if player.hand_value == 21:
-                    player.status = STATUS_LIST[7]
-                    self.dealer.payout(player)
-
-
-    def print_players_status(self):
-        for player in self.player_list:
-            print(f"Player{player.index} status is {player.status}")
-
+                if player.hand.value == 21:
+                    player.hand.status = STATUS_LIST[7]
+                    Dealer.payout(player.hand)
 
     def players_decide(self):
         """Letting all the active, not standing and not blackjacked player decide"""
         for player in self.player_list:
-            if player.is_active and not(player.is_standing) and player.status != STATUS_LIST[7]:
-                player.decide(self)
-                self.dealer.payout(player)
+            player.decide(self)
 
-
-    def are_all_active_players_standing(self):
+    def are_all_active_hands_standing(self):
         """
-        Checks if all active players are standing
-        :returns True if all active players are standing
+        Checks if all active hands are standing
+        :returns True if all active hand are standing
         """
         is_standing_list = [
-            player.is_standing for player in self.player_list if player.is_active==True
+            player.hand.is_standing for player in self.player_list if player.hand.is_active
         ]
         return all(is_standing_list)
 
-
     def pay_all_active_standing_players(self):
-        """Pay out all active standing players and makes them inactive """
-        if self.are_all_active_players_standing():
+        """Pay out all active standing hands and makes them inactive """
+        if self.are_all_active_hands_standing():
             for player in self.player_list:
-                if player.is_active:
-                    self.dealer.compare_player_hand(player)
-                    self.dealer.payout(player)
-
+                if player.hand.is_active:
+                    self.dealer.compare_player_hand(player.hand)
+                    Dealer.payout(player.hand)
 
     def print_players_info(self):
         """Prints all players info"""
         for player in self.player_list:
-            print(f"Player {player.index}| stake : {player.stake} | is_active : {player.is_active} | is_standing : {player.is_standing} | status : {player.status} | is_burst : {player.is_burst}")
-
+            player.print_info()
 
     def dealer_draw_card(self):
         """This draws a card for the dealer till he/she reach 17 or bursts"""
-        self.dealer.set_hand_value()
+        self.dealer.hand.set_value()
 
-        while self.dealer.hand_value < 17 :
-            self.draw_card(self.dealer)
+        while self.dealer.hand.value < 17:
+            self.draw_card(self.dealer.hand)
         print()
 
 
@@ -517,7 +507,8 @@ def start_game():
 
     print("Welcome to the game of Black Jack.")
     print("Please note that the split feature is not available yet.")
-    print("Please input ('ST' for STAND) ('HT' for HIT) ('DD' for DOUBLING DOWN) ('SP' for SPLIT) ('SU' for SURRENDER).\n")
+    print("Please input ('ST' for STAND) ('HT' for HIT) "
+          "('DD' for DOUBLING DOWN) ('SP' for SPLIT) ('SU' for SURRENDER).\n")
 
     # Asking for the number of players to create
     no_players = int(input("How many players are playing: "))
