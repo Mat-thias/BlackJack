@@ -1,3 +1,3 @@
-from blackjackmodule import start_game
+from blackjack import start_game
 
 start_game()

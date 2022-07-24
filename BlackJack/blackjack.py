@@ -1,3 +1,5 @@
+"""A module for a simple command land python implementation of blackjack."""
+
 from random import shuffle
 import input_handler
 
