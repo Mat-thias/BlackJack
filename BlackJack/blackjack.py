@@ -178,7 +178,7 @@ class Hand:
             input_str += " " + choice
         input_str += ": "
 
-        error_message = "Invalid input. Please make sure you choose from your available choices."
+        error_message = "Invalid input. Please make sure you choose from your available choices. "
         player_input = input_handler.get_input_str_from_choice(
             possible_choices, input_str, error_message=error_message, case_sensitive=False)
 
@@ -628,6 +628,7 @@ class Table:
 
     def dealer_draw_card(self):
         """This draws a card for the dealer till he/she reach 17 or bursts"""
+        print()
         while self.dealer.hand.value < 17:
             self.draw_card(self.dealer.hand)
         print()
