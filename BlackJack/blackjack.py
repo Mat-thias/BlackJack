@@ -59,11 +59,11 @@ class Card:
         Note, to set the value of an ace we need to check the value of the hand,
         it is default to 11, later recalculated from the hand itself
         """
-        if self.rank in ["2", "3", "4", "5", "6", "7", "8", "9", "10"]:
+        if self.rank in RANK_LIST[1:10]:    # 2 - 9
             self.value = int(self.rank)
-        elif self.rank in ["J", "Q", "K"]:
+        elif self.rank in RANK_LIST[10:]:   # 10, J, Q, K
             self.value = 10
-        elif self.rank == 'A':
+        elif self.rank == RANK_LIST[1]:     # A
             self.value = 11
 
 
@@ -333,7 +333,7 @@ class Player:
             input_message = f"How much do you want to stake in $ (max is ${hand.stake:.2f})," \
                             f" you have ${self.balance} as balance: "
             stake = input_handler.get_input_float(input_message, error_massage=None,
-                                                  upper_limit=min(self.hand.stake, self.balance), lower_limit=0)
+                                                  upper_limit=min(float(self.hand.stake), self.balance), lower_limit=0)
         else:
             print(f"Player {self.index} has ${self.balance:.2f}.")
             input_message = "How much do you want to stake in $: "
@@ -579,6 +579,7 @@ class Table:
         win_rate = 1
         loss_rate = -1
         push_rate = 0
+        surrender_rate = -.5
 
         if hand.is_active:
             if (hand.status == STATUS_LIST[7]) and hand.is_active:
@@ -597,7 +598,7 @@ class Table:
                 hand.stake += (hand.stake * loss_rate)
                 print(f"{hand} lost by busting. Try Again!")
             elif (hand.status == STATUS_LIST[2]) and hand.is_active:
-                hand.stake += (hand.stake * loss_rate)
+                hand.stake += (hand.stake * surrender_rate)
                 print(f"{hand} lost by surrendering. Try Again!")
             elif (hand.status == STATUS_LIST[1]) and hand.is_active:
                 hand.stake += (hand.stake * push_rate)
